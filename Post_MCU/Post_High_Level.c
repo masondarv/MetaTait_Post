@@ -34,8 +34,6 @@ unsigned long chunk3Addr;            //address of the third third of data in FRA
 Uint16 globalBrt= 0;                       // Global brightness value received from Base, user programmed
 Uint16 Refresh = 0;                  //Refresh rate value sent from Base used to calculate timer interrupt value
 Uint16 stframe = 0x0000;  	// 32 0 bits signal start of each LED frame, each stframe is 16 bits, must send 2
-Uint16 startBlue =0;        //First 16 bits of an LED frame
-Uint16 greenRed;            //Second 16 bits of an LED frame
 char L1L2[264];
 char L3L4[264];
 char L5L6[264];
@@ -141,17 +139,18 @@ void getLEDChunk(Uint16 startL1L2, Uint16 endL1L2, Uint16 startL3L4, Uint16 endL
 __interrupt void cpu_timer0_isr(void)
 {
    CpuTimer0.InterruptCount++;
-	// Get
-    //
-    //
+
 	Uint16 i;
-		    Uint16 index = updateLength*u;
-		    Uint16 startL1L2 = index;
-			Uint16 endL1L2 = index+height*rgbDim-1;
-			Uint16 startL3L4 = index + height*rgbDim;
-			Uint16 endL3L4 = index + 2*height*rgbDim - 1;
-			Uint16 startL5L6 = index + 2*height*rgbDim;
-			Uint16 endL5L6 = index+3*height*rgbDim - 1;
+    Uint16 index = updateLength*u;
+    Uint16 startL1L2 = index;
+    Uint16 endL1L2 = index+height*rgbDim-1;
+    Uint16 startL3L4 = index + height*rgbDim;
+    Uint16 endL3L4 = index + 2*height*rgbDim - 1;
+    Uint16 startL5L6 = index + 2*height*rgbDim;
+    Uint16 endL5L6 = index+3*height*rgbDim - 1;
+
+    Uint16 startBlue =0;        //First 16 bits of an LED frame
+    Uint16 greenRed;            //Second 16 bits of an LED frame
 
 
 		// extract corresponding data for LED strip pairs
