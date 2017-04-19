@@ -36,9 +36,11 @@
 //
 void InitSpi(void)
 {
-    // Initialize High Speed SPI A, B, and C
+
 
 	ClkCfgRegs.LOSPCP.bit.LSPCLKDIV = 0;  // Set LSPCLK equal to SYSCLK
+
+	// Initialize A
 
 
     // Set reset low before configuration changes
@@ -71,6 +73,77 @@ void InitSpi(void)
 
     // Release the SPI from reset
     SpiaRegs.SPICCR.bit.SPISWRESET = 1;
+
+    //Initialize B
+
+
+   	// Set reset low before configuration changes
+   	   // Clock polarity (0 == rising, 1 == falling)
+   	   // 16-bit character
+   	   // Enable loop-back
+   	// Enable High Speed SPI Enhancements
+
+   	   SpibRegs.SPICCR.bit.SPISWRESET = 0;
+   	   SpibRegs.SPICCR.bit.CLKPOLARITY = 0;
+   	   SpibRegs.SPICCR.bit.SPICHAR = (16-1);
+   	   SpibRegs.SPICCR.bit.SPILBK = 1;
+   	  // SpiaRegs.SPICCR.bit.HS_MODE = 1;
+
+
+   	   // Enable master (0 == slave, 1 == master)
+   	   // Enable transmission (Talk)
+   	   // Clock phase (0 == normal, 1 == delayed)
+   	   // SPI interrupts are disabled
+   	   SpibRegs.SPICTL.bit.MASTER_SLAVE = 1;
+   	   SpibRegs.SPICTL.bit.TALK = 1;
+   	   SpibRegs.SPICTL.bit.CLK_PHASE = 0;
+   	   SpibRegs.SPICTL.bit.SPIINTENA = 0;
+
+   	   // Set the baud rate
+   	   SpibRegs.SPIBRR.bit.SPI_BIT_RATE = SPI_BRR;
+
+   	   // Set FREE bit
+   	   // Halting on a breakpoint will not halt the SPI
+   	   SpibRegs.SPIPRI.bit.FREE = 1;
+
+   	   // Release the SPI from reset
+   	   SpibRegs.SPICCR.bit.SPISWRESET = 1;
+
+   	   //Initialize C
+
+
+   	  	// Set reset low before configuration changes
+   	  	   // Clock polarity (0 == rising, 1 == falling)
+   	  	   // 16-bit character
+   	  	   // Enable loop-back
+   	  	// Enable High Speed SPI Enhancements
+
+   	  	   SpicRegs.SPICCR.bit.SPISWRESET = 0;
+   	  	   SpicRegs.SPICCR.bit.CLKPOLARITY = 0;
+   	  	   SpicRegs.SPICCR.bit.SPICHAR = (16-1);
+   	  	   SpicRegs.SPICCR.bit.SPILBK = 1;
+   	  	  // SpiaRegs.SPICCR.bit.HS_MODE = 1;
+
+
+   	  	   // Enable master (0 == slave, 1 == master)
+   	  	   // Enable transmission (Talk)
+   	  	   // Clock phase (0 == normal, 1 == delayed)
+   	  	   // SPI interrupts are disabled
+   	  	   SpicRegs.SPICTL.bit.MASTER_SLAVE = 1;
+   	  	   SpicRegs.SPICTL.bit.TALK = 1;
+   	  	   SpicRegs.SPICTL.bit.CLK_PHASE = 0;
+   	  	   SpicRegs.SPICTL.bit.SPIINTENA = 0;
+
+   	  	   // Set the baud rate
+   	  	   SpicRegs.SPIBRR.bit.SPI_BIT_RATE = SPI_BRR;
+
+   	  	   // Set FREE bit
+   	  	   // Halting on a breakpoint will not halt the SPI
+   	  	   SpicRegs.SPIPRI.bit.FREE = 1;
+
+   	  	   // Release the SPI from reset
+   	  	   SpicRegs.SPICCR.bit.SPISWRESET = 1;
+
 }
 
 //
@@ -178,12 +251,12 @@ void spi_xmita(Uint16 a)		//Transmit via SPIA
 
 void spi_xmitb(Uint16 a)		//Transmit via SPIB
 {
-   SpiaRegs.SPITXBUF = a;
+   SpibRegs.SPITXBUF = a;
 }
 
 void spi_xmitc(Uint16 a)		//Transmit via SPIC
 {
-   SpiaRegs.SPITXBUF = a;
+   SpicRegs.SPITXBUF = a;
 }
 
 void spi_fifo_init()
@@ -206,3 +279,5 @@ void spi_fifo_init()
 //
 // End of file
 //
+
+
