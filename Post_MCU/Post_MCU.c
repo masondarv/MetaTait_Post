@@ -2,13 +2,17 @@
 #include "F2837xS_device.h"
 #include "F2837xS_Examples.h"
 #include "Post_SPI.h"
-#include "Post_McBSP_DMA.h"
-#include "Post_I2C.h"
 #include "Post_High_Level.h"
+#include "Post_MCBSP_SPI.h"
 
 
-int Run = 0;
 
+Uint16 globalBrt= 0;                       // Global brightness value received from Base, user programmed
+Uint16 Refresh = 0;                  //Refresh rate value sent from Base used to calculate timer interrupt value
+Uint16 rdata = 0;                    // temp variable for storing recieved data from base
+Uint16 intCounter = 0;              // keeps track of the number of 16-bit words that have been transferred from base to post
+Uint16 imageIntCount = 60000;
+Uint16 sdata =0xF0F0;
 
 
 
@@ -34,13 +38,8 @@ int main(void)
 
 	InitSpiGpio();				//Initialize GPIO pins for SPI Communication
 
-	InitMcbspaGpio();          // Initialize GPIO pins for MCBSP DMA
+	InitMcbspbGpio();          // Initialize GPIO pins for MCBSP DMA
 
-	GPIO_SetupPinMux(32, GPIO_MUX_CPU1, 1);     // For I2C communication
-	GPIO_SetupPinMux(33, GPIO_MUX_CPU1, 1);     // For I2C communication
-
-	GPIO_SetupPinMux(65, GPIO_MUX_CPU1, 0);     // For timer interrupt
-	GPIO_SetupPinOptions(65, GPIO_OUTPUT, GPIO_PUSHPULL); // For timer interrupt
 
 	//
 	// Clear all interrupts and initialize PIE vector table:
@@ -81,58 +80,72 @@ int main(void)
 	EALLOW;
 	// This is needed to write to EALLOW protected registers
 	PieVectTable.TIMER0_INT = &cpu_timer0_isr;
-	PieVectTable.I2CA_INT = &i2c_int1a_isr;
-	PieVectTable.DMA_CH1_INT = &local_D_INTCH1_ISR;
-	PieVectTable.DMA_CH2_INT = &local_D_INTCH2_ISR;
 	EDIS;
 	// This is needed to disable write to EALLOW protected registers
 
-	//
-	// Initialize I2CA
-	//
-	I2CA_Init();
 
-	//
-	// Ensure DMA is connected to PF2SEL bridge (EALLOW protected)
-	//
-	EALLOW;
-	CpuSysRegs.SECMSEL.bit.PF2SEL = 1;
-	EDIS;
-
-	//For testing McBSP DMA writing and reading
-/*	int i;
-	for (i = 0; i < ChunkSizeI; i++) {
-		ChunkDMAT[i] = 0x22FF;
-		ChunkDMA[i] = 0;
-	}
-*/
-	init_dma();        // 1. When using DMA, initialize DMA with
-					   //    peripheral interrupts first.
-
-	start_dma();       // not sure if start DMA should go first
-	//mcbsp_init_dlb();      // 2. Then initialize and release peripheral
 	init_mcbsp_spi();      //   (McBSP) from Reset.
 
 	//
 	// Enable interrupts required for this example
 	//
 	PieCtrlRegs.PIECTRL.bit.ENPIE = 1;   // Enable the PIE block
-	PieCtrlRegs.PIEIER7.bit.INTx1 = 1;   // Enable PIE Group 7, INT 1 (DMA CH1)
-	PieCtrlRegs.PIEIER7.bit.INTx2 = 1;   // Enable PIE Group 7, INT 2 (DMA CH2)
 
-	IER = 0x40;                            // Enable CPU INT groups 6 and 7
+	 IER |= M_INT1;
 
-	if (Run > 0) {
-		Runtime();
+	 PieCtrlRegs.PIEIER1.bit.INTx7 = 1;
 
-		while (1) {
+	 EINT;  // Enable Global interrupt INTM
+	 ERTM;  // Enable Global realtime interrupt DBGM
 
-		}
-	}
+
+
+while(1)
+{
+
+//	mcbsp_xmit(sdata);
+//	DELAY_US(300);
+
+	 while( McbspbRegs.SPCR1.bit.RRDY == 0 ) {}
+	 rdata = McbspaRegs.DRR1.all;
+	 if(intCounter<imageIntCount)
+	 {
+		 StoreImageData(rdata);
+		 intCounter++;
+	 }
+	 if(intCounter==imageIntCount)
+	 {
+		 globalBrt=rdata;
+		 intCounter++;
+	 }
+	 if(intCounter==imageIntCount+1)
+	 {
+
+		 Refresh=rdata;
+		 intCounter++;
+		 Runtime();
+
+	 }
+	 if(intCounter>imageIntCount+1)
+	 {
+		 Refresh = rdata;
+		 DINT;
+		ConfigCpuTimer(&CpuTimer0, 200, Refresh);
+		CpuTimer1Regs.TCR.all = 0x4000;
+		IER |= M_INT1;
+		EINT;
+
+	 }
+
+
+
+
+
 
 }
 
 
+}
 
 
 
